@@ -1,7 +1,3 @@
-I'd be happy to help you draft the required content for your README.md file! A great README is essential for the ASE challenge—it's the first thing the reviewer will look at.
-
-Since the instructions require a specific structure, here is a template that fulfills all the submission requirements for your Inventory Management System API.
-
 Inventory Management System API (Backend Challenge) ⚙️
 This project is a robust, backend-heavy API designed to track and manage product inventory in a warehouse. It fulfills all the core requirements of the Associate Software Engineer (ASE) Backend Challenge (Inventory Management System API).
 
