@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory API Client</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font */
+        body {
+            font-family: "Inter", sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center">
+<div class="container mx-auto p-6 max-w-4xl bg-slate-800 rounded-xl shadow-2xl space-y-8">
+    <h1 class="text-4xl font-extrabold text-center text-teal-400 mb-6">Inventory Management Client</h1>
+
+    <!-- Form for creating a new product -->
+    <div class="p-6 bg-slate-700 rounded-lg shadow-inner">
+        <h2 class="text-2xl font-semibold mb-4 text-teal-300">Add New Product</h2>
+        <form id="addProductForm" class="space-y-4">
+            <div>
+                <label for="name" class="block text-sm font-medium text-slate-300">Product Name</label>
+                <input type="text" id="name" name="name" required class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded-md text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+            </div>
+            <div>
+                <label for="description" class="block text-sm font-medium text-slate-300">Description</label>
+                <input type="text" id="description" name="description" required class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded-md text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="stockQuantity" class="block text-sm font-medium text-slate-300">Stock Quantity</label>
+                    <input type="number" id="stockQuantity" name="stockQuantity" required min="0" class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded-md text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                </div>
+                <div>
+                    <label for="lowStockThreshold" class="block text-sm font-medium text-slate-300">Low Stock Threshold</label>
+                    <input type="number" id="lowStockThreshold" name="lowStockThreshold" required min="0" class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded-md text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                </div>
+            </div>
+            <button type="submit" class="w-full py-2 px-4 bg-teal-600 hover:bg-teal-700 rounded-md font-semibold transition-colors duration-200">
+                Add Product
+            </button>
+        </form>
+        <!-- User feedback message box -->
+        <div id="feedbackMessage" class="hidden mt-4 p-3 rounded-lg text-center font-medium"></div>
+    </div>
+
+    <!-- Section to display products -->
+    <div class="p-6 bg-slate-700 rounded-lg shadow-inner">
+        <h2 class="text-2xl font-semibold mb-4 text-teal-300">Current Products</h2>
+        <div id="productsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Products will be dynamically added here -->
+            <p id="loadingMessage" class="text-center text-slate-400">Loading products...</p>
+        </div>
+        <div id="errorMessage" class="hidden mt-4 text-center text-red-400 font-medium">
+            Could not fetch products. Please ensure the API is running on localhost:8080.
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const apiBaseUrl = 'http://localhost:8080/api/products';
+        const productsContainer = document.getElementById('productsContainer');
+        const addProductForm = document.getElementById('addProductForm');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const feedbackMessage = document.getElementById('feedbackMessage');
+
+        // Helper function to display messages to the user
+        const showFeedback = (message, isError = false) => {
+            feedbackMessage.textContent = message;
+            feedbackMessage.className = `mt-4 p-3 rounded-lg text-center font-medium ${isError ? 'bg-red-800 text-red-200' : 'bg-green-800 text-green-200'}`;
+            feedbackMessage.classList.remove('hidden');
+        };
+
+        // --- Function to fetch and display all products ---
+        const fetchProducts = async () => {
+            loadingMessage.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+            productsContainer.innerHTML = ''; // Clear previous products
+
+            try {
+                const response = await fetch(apiBaseUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const products = await response.json();
+
+                if (products.length === 0) {
+                    productsContainer.innerHTML = '<p class="text-center text-slate-400 col-span-full">No products found. Add one above!</p>';
+                } else {
+                    products.forEach(product => {
+                        const productCard = document.createElement('div');
+                        productCard.className = 'bg-slate-600 p-5 rounded-lg shadow-md space-y-2';
+                        productCard.innerHTML = `
+                            <p class="text-lg font-bold text-teal-200">${product.name}</p>
+                            <p class="text-sm text-slate-300">${product.description}</p>
+                            <p class="text-sm font-medium">Stock: <span class="text-teal-400">${product.stockQuantity}</span></p>
+                            <p class="text-sm font-medium">Threshold: <span class="text-teal-400">${product.lowStockThreshold}</span></p>
+                            <p class="text-xs text-slate-400">ID: ${product.id}</p>
+                            <div class="flex space-x-2 mt-4">
+                                <button onclick="deleteProduct('${product.id}')" class="flex-1 py-1 px-3 bg-red-600 hover:bg-red-700 rounded-md font-semibold transition-colors duration-200 text-xs">Delete</button>
+                                <button onclick="promptUpdate('${product.id}', '${product.name}', '${product.description}', ${product.stockQuantity}, ${product.lowStockThreshold})" class="flex-1 py-1 px-3 bg-yellow-600 hover:bg-yellow-700 rounded-md font-semibold transition-colors duration-200 text-xs">Update</button>
+                            </div>
+                        `;
+                        productsContainer.appendChild(productCard);
+                    });
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                errorMessage.classList.remove('hidden');
+            } finally {
+                loadingMessage.classList.add('hidden');
+            }
+        };
+
+        // --- Function to handle form submission (add new product) ---
+        addProductForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(addProductForm);
+            const newProduct = {
+                name: formData.get('name'),
+                description: formData.get('description'),
+                stockQuantity: parseInt(formData.get('stockQuantity'), 10),
+                lowStockThreshold: parseInt(formData.get('lowStockThreshold'), 10)
+            };
+
+            try {
+                const response = await fetch(apiBaseUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(newProduct)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                showFeedback('Product added successfully!', false);
+                addProductForm.reset();
+                await fetchProducts();
+
+            } catch (error) {
+                console.error('Failed to add product:', error);
+                showFeedback('Failed to add product. Check console for details.', true);
+            }
+        });
+
+        // --- Function to delete a product ---
+        window.deleteProduct = async (id) => {
+            try {
+                const response = await fetch(`${apiBaseUrl}/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                showFeedback('Product deleted successfully!', false);
+                await fetchProducts();
+
+            } catch (error) {
+                console.error('Failed to delete product:', error);
+                showFeedback('Failed to delete product. Check console for details.', true);
+            }
+        };
+
+        // --- Function to update a product ---
+        window.updateProduct = async (id, updatedProduct) => {
+            try {
+                const response = await fetch(`${apiBaseUrl}/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updatedProduct)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                showFeedback('Product updated successfully!', false);
+                await fetchProducts();
+
+            } catch (error) {
+                console.error('Failed to update product:', error);
+                showFeedback('Failed to update product. Check console for details.', true);
+            }
+        };
+
+        // --- Prompt for update (using a simple modal-like function) ---
+        window.promptUpdate = (id, name, description, stock, lowStock) => {
+            const newName = window.prompt(`Update Name:`, name);
+            if (newName === null) return; // User cancelled
+
+            const newDescription = window.prompt(`Update Description:`, description);
+            if (newDescription === null) return;
+
+            const newStock = window.prompt(`Update Stock:`, stock);
+            if (newStock === null) return;
+
+            const newLowStock = window.prompt(`Update Low Stock Threshold:`, lowStock);
+            if (newLowStock === null) return;
+
+            const updatedProduct = {
+                name: newName,
+                description: newDescription,
+                stockQuantity: parseInt(newStock, 10),
+                lowStockThreshold: parseInt(newLowStock, 10)
+            };
+
+            window.updateProduct(id, updatedProduct);
+        };
+
+        // Initial fetch of products when the page loads
+        fetchProducts();
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+### GET request to example server
+GET http://localhost:8080/api/products
+###
+
+###Get low stock products
+GET http://localhost:8080/api/products/low-stock
+###
+
+###Create a new product
+POST http://localhost:8080/api/products
+Content-Type: application/json
+
+{ "name": "Wireless Bluetooth Headphones", "description": "Over-ear headphones with noise cancellation and a 20-hour battery life.", "stockQuantity": 150, "lowStockThreshold": 25 }
+###
+
+###Add stock to a product by ID (replace {id} with the product's ID)
+POST http://localhost:8080/api/products/474152ff-dd1c-4a15-afde-732230bb85af/stock/add
+Content-Type: application/json
+
+{ "quantity": 50 }
+
+###
+
+### Remove stock from a product by ID (replace {id} with the product's ID)
+POST http://localhost:8080/api/products/474152ff-dd1c-4a15-afde-732230bb85af/stock/remove
+Content-Type: application/json
+
+{ "quantity": 50 }
+###
+
+### Update an existing product (replace {id} with the product's ID)
+PUT http://localhost:8080/api/products/474152ff-dd1c-4a15-afde-732230bb85af
+Content-Type: application/json
+
+{ "name": "Updated Wireless Bluetooth Headphones", "description": "New description for the updated product.", "stockQuantity": 160, "lowStockThreshold": 30 }
+###
+
+###Delete a product (replace {id} with the product's ID)
+DELETE http://localhost:8080/api/products/474152ff-dd1c-4a15-afde-732230bb85af
+
+
